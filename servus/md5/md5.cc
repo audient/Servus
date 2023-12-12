@@ -283,7 +283,7 @@ const char *MD5::hex_digest(){
 
   char *s= new char[33];
   for (int i=0; i<16; i++)
-    sprintf(s+i*2, "%02x", digest[i]);
+    snprintf(s+i*2, 33, "%02x", digest[i]);
 
   s[32]='\0';
 

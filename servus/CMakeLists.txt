@@ -52,6 +52,7 @@ if(AVAHI-CLIENT_FOUND)
   list(APPEND SERVUS_LINK_LIBRARIES ${avahi-client_LIBRARIES})
 endif()
 
+set(COMMON_LIBRARY_TYPE STATIC)
 set(SERVUS_OMIT_LIBRARY_HEADER ON)
 common_library(Servus)
 
