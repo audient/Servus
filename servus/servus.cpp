@@ -177,11 +177,13 @@ protected:
 }
 
 // Impls need detail interface definition above
-#ifdef SERVUS_USE_DNSSD
-#include "dnssd/servus.h"
-#elif defined(SERVUS_USE_AVAHI_CLIENT)
-#include "avahi/servus.h"
-#endif
+// #ifdef SERVUS_USE_DNSSD
+// #include "dnssd/servus.h"
+// #elif defined(SERVUS_USE_AVAHI_CLIENT)
+// #include "avahi/servus.h"
+// #elif defined(SERVUS_USE_WINDNS)
+#include "windns/servus.h"
+// #endif
 #include "none/servus.h"
 #include "test/servus.h"
 
@@ -195,11 +197,13 @@ std::unique_ptr<Servus::Impl> _chooseImplementation(const std::string& name)
         return std::unique_ptr<Servus::Impl>(new test::Servus);
     try
     {
-#ifdef SERVUS_USE_DNSSD
-        return std::unique_ptr<Servus::Impl>(new dnssd::Servus(name));
-#elif defined(SERVUS_USE_AVAHI_CLIENT)
-        return std::unique_ptr<Servus::Impl>(new avahi::Servus(name));
-#endif
+// #ifdef SERVUS_USE_DNSSD
+        // return std::unique_ptr<Servus::Impl>(new dnssd::Servus(name));
+// #elif defined(SERVUS_USE_AVAHI_CLIENT)
+        // return std::unique_ptr<Servus::Impl>(new avahi::Servus(name));
+// #elif defined(SERVUS_USE_WINDNS)
+        return std::unique_ptr<Servus::Impl>(new windns::Servus(name));
+// #endif
         return std::unique_ptr<Servus::Impl>(new none::Servus(name));
     }
     catch (const std::runtime_error& error)
@@ -222,7 +226,7 @@ Servus::~Servus()
 
 bool Servus::isAvailable()
 {
-#if defined(SERVUS_USE_DNSSD) || defined(SERVUS_USE_AVAHI_CLIENT)
+#if defined(SERVUS_USE_DNSSD) || defined(SERVUS_USE_AVAHI_CLIENT) || defined(SERVUS_USE_WINDNS)
     return true;
 #endif
     return false;

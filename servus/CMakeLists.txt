@@ -29,6 +29,7 @@ set(SERVUS_PUBLIC_HEADERS
 set(SERVUS_HEADERS
   avahi/servus.h
   dnssd/servus.h
+  windns/servus.h
   none/servus.h
   test/servus.h
   )
