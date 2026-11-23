@@ -23,6 +23,8 @@
 #endif
 #include <dns_sd.h>
 
+#include "instanceInterfaces.h"
+
 #include <algorithm>
 #include <cassert>
 
@@ -91,6 +93,7 @@ public:
             return servus::Servus::Result(servus::Servus::Result::PENDING);
 
         _instanceMap.clear();
+        _browsedInterfaces.clear();
         return _browse(addr);
     }
 
@@ -113,7 +116,9 @@ private:
     DNSServiceRef _out; //!< used for announce()
     DNSServiceRef _in;  //!< used to browse()
     int32_t _result;
+    bool _resolved = false; //!< the resolve in progress was answered
     std::string _browsedName;
+    InstanceInterfaces _browsedInterfaces; //!< where each instance is seen
 
     servus::Servus::Result _browse(const ::servus::Servus::Interface addr)
     {
@@ -268,6 +273,11 @@ private:
 
         if (flags & kDNSServiceFlagsAdd)
         {
+            // Resolved and reported on every interface's add, not only the
+            // first: a service restarted under the same name is seen as an
+            // add on an interface where the old one hasn't been removed yet,
+            // and its port and TXT record are the new ones.
+            _browsedInterfaces.add(name, interfaceIdx);
             _browsedName = name;
 
             DNSServiceRef service = 0;
@@ -279,12 +289,21 @@ private:
 
             if (service)
             {
+                _resolved = false;
                 _handleEvents(service, 500);
                 DNSServiceRefDeallocate(service);
+
+                if (!_resolved)
+                    WARN << "Resolving " << name << " on interface "
+                         << interfaceIdx << " got no answer" << std::endl;
             }
         }
         else // dns_sd.h: callback with the Add flag NOT set indicates a Remove
         {
+            // Gone from this interface; only gone once it's gone from all
+            if (!_browsedInterfaces.remove(name, interfaceIdx))
+                return;
+
             _instanceMap.erase(name);
             for (Listener* listener : _listeners)
                 listener->instanceRemoved(name);
@@ -305,6 +324,7 @@ private:
 
     void resolveCB_(const char* host, uint16_t txtLen, const unsigned char* txt, uint16_t port)
     {
+        _resolved = true;
         ValueMap& values = _instanceMap[_browsedName];
         values["servus_host"] = host;
         values["servus_port"] =  std::to_string(static_cast<int>(ntohs(port)));
